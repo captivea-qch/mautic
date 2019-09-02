@@ -123,10 +123,19 @@ class ImportTest extends StandardImportTestHelper
         $this->assertSame(Import::QUEUED, $import->getStatus());
         $this->assertNull($import->getDateStarted());
 
+        // Date started will be set when the start is called for the first time.
         $import->start();
 
+        $startDate = $import->getDateStarted();
+
         $this->assertSame(Import::IN_PROGRESS, $import->getStatus());
-        $this->assertTrue($import->getDateStarted() instanceof \DateTime);
+        $this->assertTrue($startDate instanceof \DateTime);
+
+        // But the date started will not change when started for the second time.
+        $import->end(false);
+        $import->start();
+
+        $this->assertSame($startDate, $import->getDateStarted());
     }
 
     public function testEnd()
@@ -148,9 +157,9 @@ class ImportTest extends StandardImportTestHelper
 
         $this->assertNull($import->getRunTime());
 
-        $this->fakeImportStartDate($import, (10 * 60));
-
         $import->end(false);
+
+        $this->fakeImportStartDate($import, (10 * 60));
 
         $this->assertTrue($import->getRunTime() instanceof \DateInterval);
         $this->assertSame(10, $import->getRunTime()->i);
@@ -162,9 +171,9 @@ class ImportTest extends StandardImportTestHelper
 
         $this->assertSame(0, $import->getRunTimeSeconds());
 
-        $this->fakeImportStartDate($import, 600);
-
         $import->end(false);
+
+        $this->fakeImportStartDate($import, 600);
 
         $this->assertSame(600, $import->getRunTimeSeconds());
     }
@@ -175,10 +184,10 @@ class ImportTest extends StandardImportTestHelper
 
         $this->assertSame(0, $import->getSpeed());
 
-        $this->fakeImportStartDate($import, 600);
-
         $import->setInsertedCount(900);
         $import->end(false);
+
+        $this->fakeImportStartDate($import, 600);
 
         $this->assertSame(1.5, $import->getSpeed());
     }
@@ -203,7 +212,8 @@ class ImportTest extends StandardImportTestHelper
      */
     protected function fakeImportStartDate(Import $import, $runtime = 600)
     {
-        $dateStarted = new \DateTime();
+        $dateEnded   = $import->getDateEnded();
+        $dateStarted = new \DateTime($dateEnded->format('Y-m-d H:i:s.u'), $dateEnded->getTimezone());
         $dateStarted->modify('-'.$runtime.' seconds');
         $import->setDateStarted($dateStarted);
     }

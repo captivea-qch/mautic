@@ -202,7 +202,16 @@ $detailRowTmpl = 'MauticCoreBundle:Helper:detail_row.html.php';
                                     <?php echo $row['properties']['line']; ?>
                                 </td>
                                 <td>
-                                    <?php echo isset($row['properties']['error']) ? $row['properties']['error'] : 'N/A'; ?>
+                                    <?php
+                                    $error = 'N/A';
+                                    if (isset($row['properties']['error'])):
+                                        $error = $row['properties']['error'];
+                                        if (preg_match('/SQLSTATE\[\w+\]: (.*)/', $error, $matches)):
+                                            $error = $matches[1];
+                                        endif;
+                                    endif;
+                                    echo $error;
+                                    ?>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -224,6 +233,6 @@ $detailRowTmpl = 'MauticCoreBundle:Helper:detail_row.html.php';
         <?php echo $view->render('MauticCoreBundle:Helper:recentactivity.html.php', ['logs' => $logs]); ?>
     </div>
     <!--/ right section -->
-    <input name="entityId" id="entityId" type="hidden" value="<?php echo $item->getId(); ?>"/>
+    <input name="entityId" id="entityId" type="hidden" value="<?php echo $view->escape($item->getId()); ?>"/>
 </div>
 <!--/ end: box layout -->

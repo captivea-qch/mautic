@@ -148,6 +148,16 @@ final class LeadEvents
     const LEAD_IDENTIFIED = 'mautic.lead_identified';
 
     /**
+     * The mautic.lead_channel_subscription_changed event is dispatched when a lead's DNC status changes.
+     *
+     * The event listener receives a
+     * Mautic\LeadBundle\Event\ChannelSubscriptionChange instance.
+     *
+     * @var string
+     */
+    const CHANNEL_SUBSCRIPTION_CHANGED = 'mautic.lead_channel_subscription_changed';
+
+    /**
      * The mautic.lead_build_search_commands event is dispatched when the search commands are built.
      *
      * The event listener receives a
@@ -449,6 +459,15 @@ final class LeadEvents
     const ON_CAMPAIGN_TRIGGER_ACTION = 'mautic.lead.on_campaign_trigger_action';
 
     /**
+     * The mautic.lead.on_campaign_action_delete_contact event is dispatched when the campaign action to delete a contact is executed.
+     *
+     * The event listener receives a Mautic\CampaignBundle\Event\PendingEvent
+     *
+     * @var string
+     */
+    const ON_CAMPAIGN_ACTION_DELETE_CONTACT = 'mautic.lead.on_campaign_action_delete_contact';
+
+    /**
      * The mautic.lead.on_campaign_trigger_condition event is fired when the campaign condition triggers.
      *
      * The event listener receives a
@@ -525,6 +544,16 @@ final class LeadEvents
     const LIST_FILTERS_ON_FILTERING = 'mautic.list_filters_on_filtering';
 
     /**
+     * The mautic.list_filters_querybuilder_generated event is dispatched when the queryBuilder for segment was generated.
+     *
+     * The event listener receives a
+     * Mautic\LeadBundle\Event\LeadListQueryBuilderGeneratedEvent instance.
+     *
+     * @var string
+     */
+    const LIST_FILTERS_QUERYBUILDER_GENERATED = 'mautic.list_filters_querybuilder_generated';
+
+    /**
      * The mautic.list_filters_on_filtering event is dispatched when the lists are updated.
      *
      * The event listener receives a
@@ -542,6 +571,16 @@ final class LeadEvents
      * @var string
      */
     const FORM_SUBMIT_REMOVE_DO_NO_CONTACT = 'mautic.form_submit_remove_do_no_contact';
+
+    /**
+     * The mautic.clickthrough_contact_identification event is dispatched when a clickthrough array is parsed from a tracking
+     * URL.
+     *
+     * The event listener receives a Mautic\LeadBundle\Event\ContactIdentificationEvent instance.
+     *
+     * @var string
+     */
+    const ON_CLICKTHROUGH_IDENTIFICATION = 'mautic.clickthrough_contact_identification';
 
     /**
      * @deprecated - 2.4 to be removed in 3.0; use Mautic\ChannelBundle\ChannelEvents::ADD_CHANNEL

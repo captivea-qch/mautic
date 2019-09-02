@@ -60,14 +60,20 @@ class CompanySubscriber extends CommonSubscriber
      */
     public function onCompanyPostSave(Events\CompanyEvent $event)
     {
-        $integrationObject = $this->integrationHelper->getIntegrationObject(PipedriveIntegration::INTEGRATION_NAME);
+        $company = $event->getCompany();
+        if ($company->getEventData('pipedrive.webhook')) {
+            // Don't export what was just imported
+            return;
+        }
 
-        if (false === $integrationObject || !$integrationObject->getIntegrationSettings()->getIsPublished()) {
+        /** @var PipedriveIntegration $integrationObject */
+        $integrationObject = $this->integrationHelper->getIntegrationObject(PipedriveIntegration::INTEGRATION_NAME);
+        if (false === $integrationObject || !$integrationObject->shouldImportDataToPipedrive()) {
             return;
         }
 
         $this->companyExport->setIntegration($integrationObject);
-        $this->companyExport->pushCompany($event->getCompany());
+        $this->companyExport->pushCompany($company);
     }
 
     /**
@@ -75,13 +81,19 @@ class CompanySubscriber extends CommonSubscriber
      */
     public function onCompanyPreDelete(Events\CompanyEvent $event)
     {
-        $integrationObject = $this->integrationHelper->getIntegrationObject(PipedriveIntegration::INTEGRATION_NAME);
+        $company = $event->getCompany();
+        if ($company->getEventData('pipedrive.webhook')) {
+            // Don't export what was just imported
+            return;
+        }
 
-        if (false === $integrationObject || !$integrationObject->getIntegrationSettings()->getIsPublished()) {
+        /** @var PipedriveIntegration $integrationObject */
+        $integrationObject = $this->integrationHelper->getIntegrationObject(PipedriveIntegration::INTEGRATION_NAME);
+        if (false === $integrationObject || !$integrationObject->shouldImportDataToPipedrive()) {
             return;
         }
 
         $this->companyExport->setIntegration($integrationObject);
-        $this->companyExport->delete($event->getCompany());
+        $this->companyExport->delete($company);
     }
 }

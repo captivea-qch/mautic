@@ -17,6 +17,8 @@ use Mautic\CoreBundle\Tests\CommonMocks;
 use Mautic\LeadBundle\Entity\lead;
 use Mautic\LeadBundle\Event\LeadEvent;
 use Mautic\LeadBundle\EventListener\LeadSubscriber;
+use Mautic\LeadBundle\Helper\LeadChangeEventDispatcher;
+use Mautic\LeadBundle\Templating\Helper\DncReasonHelper;
 
 class LeadSubscriberTest extends CommonMocks
 {
@@ -72,7 +74,13 @@ class LeadSubscriberTest extends CommonMocks
         $auditLogModel->expects($this->once())
             ->method('writeToLog');
 
-        $subscriber = new LeadSubscriber($ipLookupHelper, $auditLogModel);
+        $leadEventDispatcher = $this->getMockBuilder(LeadChangeEventDispatcher::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $dncReasonHelper = $this->createMock(DncReasonHelper::class);
+
+        $subscriber = new LeadSubscriber($ipLookupHelper, $auditLogModel, $leadEventDispatcher, $dncReasonHelper);
 
         $leadEvent = $this->getMockBuilder(LeadEvent::class)
             ->disableOriginalConstructor()

@@ -122,6 +122,7 @@ trait CustomFieldRepositoryTrait
                 $order .= ' ELSE '.$count.' END) AS HIDDEN ORD';
 
                 //ORM - generates lead entities
+                /** @var \Doctrine\ORM\QueryBuilder $q */
                 $q = $this->getEntitiesOrmQueryBuilder($order);
                 $this->buildSelectClause($dq, $args);
 
@@ -133,9 +134,11 @@ trait CustomFieldRepositoryTrait
                 $q->orderBy('ORD', 'ASC');
 
                 $results = $q->getQuery()
+                    ->useQueryCache(false) // the query contains ID's, so there is no use in caching it
                     ->getResult();
 
                 //assign fields
+                /** @var Lead $r */
                 foreach ($results as $r) {
                     $id = $r->getId();
                     $r->setFields($fieldValues[$id]);
@@ -263,8 +266,9 @@ trait CustomFieldRepositoryTrait
             $fields = array_diff_key($fields, $changes);
         }
 
+        $this->prepareDbalFieldsForSave($fields);
+
         if (!empty($fields)) {
-            $this->prepareDbalFieldsForSave($fields);
             $this->getEntityManager()->getConnection()->update($table, $fields, ['id' => $entity->getId()]);
         }
 
@@ -308,9 +312,9 @@ trait CustomFieldRepositoryTrait
 
         //loop over results to put fields in something that can be assigned to the entities
         foreach ($values as $k => $r) {
-            $r = CustomFieldHelper::fixValueType($fields[$k]['type'], $r);
-
             if (isset($fields[$k])) {
+                $r = CustomFieldHelper::fixValueType($fields[$k]['type'], $r);
+
                 if (!is_null($r)) {
                     switch ($fields[$k]['type']) {
                         case 'number':

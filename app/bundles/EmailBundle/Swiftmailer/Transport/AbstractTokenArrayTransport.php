@@ -13,6 +13,7 @@ namespace Mautic\EmailBundle\Swiftmailer\Transport;
 
 use Mautic\CoreBundle\Factory\MauticFactory;
 use Mautic\EmailBundle\Helper\MailHelper;
+use Mautic\EmailBundle\Helper\PlainTextMessageHelper;
 use Mautic\EmailBundle\Swiftmailer\Message\MauticMessage;
 
 /**
@@ -36,7 +37,26 @@ abstract class AbstractTokenArrayTransport implements TokenTransportInterface
     protected $started = false;
 
     /**
+     * @var array
+     */
+    protected $standardHeaderKeys = [
+        'MIME-Version',
+        'received',
+        'dkim-signature',
+        'Content-Type',
+        'Content-Transfer-Encoding',
+        'To',
+        'From',
+        'Subject',
+        'Reply-To',
+        'CC',
+        'BCC',
+    ];
+
+    /**
      * @var MauticFactory
+     *
+     * @deprecated 2.13.0 to be removed in 3.0; register transport as a service and pass dependencies
      */
     protected $factory;
 
@@ -137,7 +157,7 @@ abstract class AbstractTokenArrayTransport implements TokenTransportInterface
 
         $message = [
             'html'    => $this->message->getBody(),
-            'text'    => MailHelper::getPlainTextFromMessage($this->message),
+            'text'    => PlainTextMessageHelper::getPlainTextFromMessage($this->message),
             'subject' => $this->message->getSubject(),
             'from'    => [
                 'name'  => $fromName,
@@ -251,7 +271,7 @@ abstract class AbstractTokenArrayTransport implements TokenTransportInterface
         $headers            = $this->message->getHeaders()->getAll();
         /** @var \Swift_Mime_Header $header */
         foreach ($headers as $header) {
-            if ($header->getFieldType() == \Swift_Mime_Header::TYPE_TEXT) {
+            if ($header->getFieldType() == \Swift_Mime_Header::TYPE_TEXT && !in_array($header->getFieldName(), $this->standardHeaderKeys)) {
                 $message['headers'][$header->getFieldName()] = $header->getFieldBodyModel();
             }
         }
@@ -261,6 +281,8 @@ abstract class AbstractTokenArrayTransport implements TokenTransportInterface
 
     /**
      * @param MauticFactory $factory
+     *
+     * @deprecated 2.13.0 to be removed in 3.0; register transport as a service and pass dependencies
      */
     public function setMauticFactory(MauticFactory $factory)
     {

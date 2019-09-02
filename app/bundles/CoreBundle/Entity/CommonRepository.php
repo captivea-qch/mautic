@@ -11,6 +11,7 @@
 
 namespace Mautic\CoreBundle\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\ExpressionBuilder;
 use Doctrine\DBAL\Query\Expression\CompositeExpression;
 use Doctrine\ORM\EntityRepository;
@@ -175,10 +176,11 @@ class CommonRepository extends EntityRepository
     {
         //iterate over the results so the events are dispatched on each delete
         $batchSize = 20;
-        foreach ($entities as $k => $entity) {
+        $i         = 0;
+        foreach ($entities as $entity) {
             $this->deleteEntity($entity, false);
 
-            if ((($k + 1) % $batchSize) === 0) {
+            if (++$i % $batchSize === 0) {
                 $this->_em->flush();
             }
         }
@@ -201,6 +203,24 @@ class CommonRepository extends EntityRepository
         if ($flush) {
             $this->_em->flush();
         }
+    }
+
+    /**
+     * @param array $entities
+     */
+    public function detachEntities(array $entities)
+    {
+        foreach ($entities as $entity) {
+            $this->getEntityManager()->detach($entity);
+        }
+    }
+
+    /**
+     * @param mixed $entity
+     */
+    public function detachEntity($entity)
+    {
+        $this->getEntityManager()->detach($entity);
     }
 
     /**
@@ -308,7 +328,7 @@ class CommonRepository extends EntityRepository
      *
      * @param array $args
      *
-     * @return Paginator
+     * @return array|\Doctrine\ORM\Internal\Hydration\IterableResult|Paginator
      */
     public function getEntities(array $args = [])
     {
@@ -747,7 +767,7 @@ class CommonRepository extends EntityRepository
     /**
      * Persist an array of entities.
      *
-     * @param array $entities
+     * @param array|ArrayCollection $entities
      */
     public function saveEntities($entities)
     {
@@ -755,11 +775,10 @@ class CommonRepository extends EntityRepository
         $batchSize = 20;
         $i         = 0;
 
-        foreach ($entities as $k => $entity) {
-            ++$i;
+        foreach ($entities as $entity) {
             $this->saveEntity($entity, false);
 
-            if ($i % $batchSize === 0) {
+            if (++$i % $batchSize === 0) {
                 $this->getEntityManager()->flush();
             }
         }
@@ -866,7 +885,7 @@ class CommonRepository extends EntityRepository
         }
 
         $clause['dir'] = $this->sanitize(strtoupper($clause['dir']));
-        $clause['col'] = $this->sanitize($clause['col'], ['_']);
+        $clause['col'] = $this->sanitize($clause['col'], ['_.']);
 
         return $clause;
     }
@@ -1112,8 +1131,8 @@ class CommonRepository extends EntityRepository
                 break;
             case $this->translator->trans('mautic.core.searchcommand.ismine'):
             case $this->translator->trans('mautic.core.searchcommand.ismine', [], null, 'en_US'):
-                $expr            = $q->expr()->eq("IDENTITY($prefix.createdBy)", $this->currentUser->getId());
-                $returnParameter = false;
+                $expr            = $q->expr()->eq("$prefix.createdBy", ":$unique");
+                $forceParameters = [$unique => $this->currentUser->getId()];
                 break;
             case $this->translator->trans('mautic.core.searchcommand.category'):
             case $this->translator->trans('mautic.core.searchcommand.category', [], null, 'en_US'):
@@ -1188,7 +1207,7 @@ class CommonRepository extends EntityRepository
      *
      * @return bool
      */
-    protected function buildClauses(&$q, array $args)
+    protected function buildClauses($q, array $args)
     {
         $this->buildSelectClause($q, $args);
         $this->buildIndexByClause($q, $args);
@@ -1311,20 +1330,22 @@ class CommonRepository extends EntityRepository
      * @param \Doctrine\ORM\QueryBuilder $q
      * @param array                      $args
      */
-    protected function buildOrderByClause(&$q, array $args)
+    protected function buildOrderByClause($q, array $args)
     {
-        $orderBy    = array_key_exists('orderBy', $args) ? $args['orderBy'] : '';
-        $orderByDir = $this->sanitize(
-            array_key_exists('orderByDir', $args) ? $args['orderByDir'] : ''
-        );
+        $orderBy = array_key_exists('orderBy', $args) ? $args['orderBy'] : '';
 
-        if (empty($orderBy)) {
+        if (!empty($args['filter']['order'])) {
+            $this->buildOrderByClauseFromArray($q, $args['filter']['order']);
+        } elseif (empty($orderBy)) {
             $defaultOrder = $this->getDefaultOrder();
 
             foreach ($defaultOrder as $order) {
                 $q->addOrderBy($order[0], $order[1]);
             }
         } else {
+            $orderByDir = $this->sanitize(
+                array_key_exists('orderByDir', $args) ? $args['orderByDir'] : ''
+            );
             //add direction after each column
             $parts = explode(',', $orderBy);
             foreach ($parts as $order) {
@@ -1433,7 +1454,7 @@ class CommonRepository extends EntityRepository
      * @param \Doctrine\ORM\QueryBuilder $q
      * @param array                      $args
      */
-    protected function buildWhereClause(&$q, array $args)
+    protected function buildWhereClause($q, array $args)
     {
         $filter                    = array_key_exists('filter', $args) ? $args['filter'] : '';
         $filterHelper              = new SearchStringHelper();

@@ -33,7 +33,7 @@ class StagesChangeLogRepository extends CommonRepository
     {
         $query = $this->getEntityManager()->getConnection()->createQueryBuilder()
             ->from(MAUTIC_TABLE_PREFIX.'lead_stages_change_log', 'ls')
-            ->select('ls.stage_id as reference, ls.event_name as eventName, ls.action_name as actionName, ls.date_added as dateAdded, ls.lead_id');
+            ->select('ls.id, ls.stage_id as reference, ls.event_name as eventName, ls.action_name as actionName, ls.date_added as dateAdded, ls.lead_id');
 
         if ($leadId) {
             $query->where('ls.lead_id = '.(int) $leadId);
@@ -152,6 +152,6 @@ class StagesChangeLogRepository extends CommonRepository
 
         $result = $query->execute()->fetch();
 
-        return (isset($result['stage'])) ? $result['stage'] : null;
+        return (isset($result['stage'])) ? (int) $result['stage'] : null;
     }
 }
